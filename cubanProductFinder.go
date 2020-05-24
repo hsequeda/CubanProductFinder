@@ -3,9 +3,9 @@ package storeClient
 import (
 	"context"
 	"encoding/json"
-	httpClient "findTuEnvioBot/client"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	httpClient "github.com/stdevHsequeda/CubanProductFinder/client"
 	html "github.com/zlepper/encoding-html"
 	"net/http"
 	"runtime"
