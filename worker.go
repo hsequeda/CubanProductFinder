@@ -20,6 +20,7 @@ func NewPool(maxGoroutines int) *Pool {
 		work: make(chan Worker),
 	}
 
+	p.wg.Add(maxGoroutines)
 	for i := 0; i < maxGoroutines; i++ {
 		go func() {
 			for w := range p.work {
