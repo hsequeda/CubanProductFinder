@@ -2,7 +2,6 @@ package storeClient
 
 import (
 	"errors"
-	"findTuEnvioBot/core"
 	"fmt"
 	"github.com/gomodule/redigo/redis"
 	"github.com/sirupsen/logrus"
@@ -149,42 +148,4 @@ func (c Cache) SearchProducts(pattern string) (int, []TuEnvioProduct, error) {
 	return total, productList, nil
 }
 
-func (c Cache) RemoveSection(sectionId string) {
-	// conn:=c.pool.Get()
-	//
-	// defer conn.Close()
-	//
-	// _, err := conn.Do("MULTI")
-	// if err != nil {
-	// 	logrus.Fatal(err)
-	// }
-	//
-	// _, err = conn.Do("HGETALL")
-	// if err != nil {
-	// 	logrus.Fatal(err)
-	// }
-	// _, err = conn.Do(
-	// 	"FT.CREATE", "products", "SCHEMA",
-	// 	"name", "TEXT", "SORTABLE",
-	// 	"price", "TEXT", "NOINDEX",
-	// 	"link", "TEXT", "NOINDEX",
-	// 	"store", "TEXT", "NOINDEX",
-	// 	"timestamp", "NUMERIC", "NOINDEX")
-	// if err != nil {
-	// 	logrus.Fatal(err)
-	// }
-	//
-	// _, err = conn.Do("EXEC")
-	// if err != nil {
-	// 	logrus.Fatal(err)
-	// }
 
-}
-
-func (c Cache) UpdateSection(sectionId string, section core.Section) {
-	panic("implement me")
-}
-
-func (c Cache) SearchProduct(pattern string) (core.Product, error) {
-	panic("implement me")
-}
