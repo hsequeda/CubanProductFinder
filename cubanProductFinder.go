@@ -13,59 +13,7 @@ import (
 	"time"
 )
 
-type StoreClient struct {
-	pool   *Pool // Pool of workers
-	stores []Store
-	client *httpClient.Client // Client
-	cache  *Cache             // Cache data
-}
-
-const tuEnvioUrl = "https://www.tuenvio.cu"
-const quintaY42 = "http://5tay42.xetid.cu"
-
 var sectionList []TuEnvioSection
-var productList map[string]TuEnvioProduct
-
-type W struct {
-	ctx  context.Context
-	task func(ctx context.Context)
-}
-
-func (w *W) GetArgs() context.Context {
-	return w.ctx
-}
-
-func (w *W) Task(ctx context.Context) {
-	section, ok := ctx.Value("section").(TuEnvioSection)
-	if !ok {
-		fmt.Println("ERROR")
-		return
-	}
-
-	sc, ok := ctx.Value("sc").(*StoreClient)
-	if !ok {
-		fmt.Println("ERROR")
-		return
-	}
-	list, err := sc.getProductsFromSection(section)
-
-	for i := range list {
-		err = sc.cache.AddProduct(&list[i])
-		if err != nil {
-			logrus.Warn(err)
-			continue
-		}
-	}
-
-	if err != nil {
-		logrus.Warn(err)
-		return
-	}
-
-	for j := range list {
-		productList[list[j].Name+" - "+list[j].Section.Store.Name] = list[j]
-	}
-}
 
 func NewStoreClient() *StoreClient {
 	// Init all attribs
@@ -92,7 +40,6 @@ func (sc *StoreClient) Start() {
 		sectionList = append(sectionList, list...)
 	}
 
-	productList = make(map[string]TuEnvioProduct)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -119,29 +66,15 @@ func (sc *StoreClient) Start() {
 			}
 		}
 	}(sectionList, sc, ctx)
+}
 
-	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		rawId := request.URL.Query().Get("id")
-		if err != nil {
-			http.Error(writer, "invalid Id:"+rawId, 400)
-			return
-		}
-		_, result, err := sc.cache.SearchProducts(rawId)
-		if err != nil {
-			http.Error(writer, err.Error(), 500)
-		}
+func (sc *StoreClient) SearchProduct(pattern string) ([]TuEnvioProduct, error) {
+	_, list, err := sc.cache.SearchProducts(pattern)
+	if err != nil {
+		return nil, err
+	}
 
-		b, err := json.Marshal(result)
-		if err != nil {
-			http.Error(writer, err.Error(), 500)
-			return
-		}
-
-		writer.Header().Add("Content-Type", "application/json")
-		writer.Write(b)
-	})
-
-	http.ListenAndServe(":9090", nil)
+	return list, nil
 }
 
 func (sc *StoreClient) getStoreList() ([]Store, error) {
@@ -167,15 +100,6 @@ func (sc *StoreClient) getStoreList() ([]Store, error) {
 		return nil, err
 	}
 	return storeList, nil
-}
-
-type TuEnvioSection struct {
-	Name      string `css:"div ul li a"`
-	Url       string `css:"div ul li a" extract:"attr" attr:"href"`
-	Parent    string
-	Store     *Store
-	Priority  int
-	ReadyTime time.Time
 }
 
 func (sc *StoreClient) getSectionsFromStore(store Store) ([]TuEnvioSection, error) {
@@ -221,13 +145,6 @@ func (sc *StoreClient) getSectionsFromStore(store Store) ([]TuEnvioSection, erro
 	}
 
 	return result, nil
-}
-
-type TuEnvioProduct struct {
-	Name    string `css:".thumbTitle",redis:"name"`
-	Price   string `css:".thumbPrice",redis:"price"`
-	Link    string `css:".thumbnail a" extract:"attr" attr:"href",redis:"link"`
-	Section *TuEnvioSection
 }
 
 func (sc *StoreClient) getProductsFromSection(section TuEnvioSection) ([]TuEnvioProduct, error) {

@@ -79,11 +79,6 @@ func (c Cache) SearchProducts(pattern string) (int, []TuEnvioProduct, error) {
 
 	defer conn.Close()
 
-	// err := conn.Send("WATCH", "products")
-	// if err != nil {
-	// 	return -1, nil, err
-	// }
-
 	reply, err := conn.Do("FT.SEARCH", "products", pattern)
 	if err != nil {
 		return -1, nil, err
@@ -100,12 +95,6 @@ func (c Cache) SearchProducts(pattern string) (int, []TuEnvioProduct, error) {
 	}
 
 	rawData = rawData[1:]
-
-	// err = conn.Send("MULTI")
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return -1, nil, err
-	// }
 
 	var productList = make([]TuEnvioProduct, 0)
 	for i := 1; i < len(rawData); i += 2 {
