@@ -50,10 +50,6 @@ func (sc *StoreClient) Start() {
 				return
 			default:
 				for i, section := range sectionListInternal {
-					if i == 15 {
-						break
-					}
-
 					if sectionListInternal[i].ReadyTime.Before(time.Now()) {
 						sectionListInternal[i].ReadyTime = time.Now().Add(1 * time.Minute)
 						sc.pool.Run(
