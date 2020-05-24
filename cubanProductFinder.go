@@ -62,6 +62,7 @@ func (sc *StoreClient) Start() {
 			}
 		}
 	}(sectionList, sc, ctx)
+	<-ctx.Done()
 }
 
 func (sc *StoreClient) SearchProduct(pattern string) ([]TuEnvioProduct, error) {
