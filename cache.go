@@ -54,26 +54,26 @@ func NewCache() *Cache {
 	return &Cache{pool: &pool}
 }
 
-func (c Cache) AddProduct(product *TuEnvioProduct) error {
+func (c Cache) AddProduct(product Product) error {
 	conn := c.pool.Get()
 
 	defer conn.Close()
 
 	_, err := conn.Do(
 		"FT.ADD", "products",
-		fmt.Sprintf("%s:%s", product.Name, product.Section.Store.Name), "1", "REPLACE",
+		fmt.Sprintf("%s:%s", product.GetName(), product.GetSection().GetStore().Name), "1", "REPLACE",
 		"FIELDS",
-		"name", product.Name,
-		"price", product.Price,
-		"link", product.Link,
-		"store", product.Section.Store.Name,
+		"name", product.GetName(),
+		"price", product.GetPrice(),
+		"link", product.GetLink(),
+		"store", product.GetSection().GetStore().Name,
 		"timestamp", time.Now().Add(2*time.Hour).Unix(),
 	)
 
 	return err
 }
 
-func (c Cache) SearchProducts(pattern string) (int, []TuEnvioProduct, error) {
+func (c Cache) SearchProducts(pattern string) (int, []Product, error) {
 
 	conn := c.pool.Get()
 
@@ -96,7 +96,7 @@ func (c Cache) SearchProducts(pattern string) (int, []TuEnvioProduct, error) {
 
 	rawData = rawData[1:]
 
-	var productList = make([]TuEnvioProduct, 0)
+	var productList = make([]Product, 0)
 	for i := 1; i < len(rawData); i += 2 {
 		mapProd, err := redis.StringMap(rawData[i], nil)
 		if err != nil {
@@ -121,11 +121,11 @@ func (c Cache) SearchProducts(pattern string) (int, []TuEnvioProduct, error) {
 			continue
 		}
 
-		productList = append(productList, TuEnvioProduct{
+		productList = append(productList, &GenericProduct{
 			Name:  mapProd["name"],
 			Price: mapProd["price"],
 			Link:  mapProd["link"],
-			Section: &TuEnvioSection{
+			Section: &GenericSection{
 				Store: &Store{
 					Name: mapProd["store"],
 				},
@@ -136,5 +136,3 @@ func (c Cache) SearchProducts(pattern string) (int, []TuEnvioProduct, error) {
 
 	return total, productList, nil
 }
-
-
