@@ -2,12 +2,44 @@ package storeClient
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
 
-type Worker interface {
-	GetArgs() context.Context
-	Task(ctx context.Context)
+type W struct {
+	ctx  context.Context
+	task func(ctx context.Context)
+}
+
+func (w *W) GetArgs() context.Context {
+	return w.ctx
+}
+
+func (w *W) Task(ctx context.Context) {
+	section, ok := ctx.Value("section").(Section)
+	if !ok {
+		logrus.Warn("'section' context value not match with 'TuEnvioSection'")
+		return
+	}
+
+	sc, ok := ctx.Value("sc").(*StoreClient)
+	if !ok {
+		logrus.Warn("'sc' context value not match with '*StoreClient'")
+		return
+	}
+	list, err := sc.getProductsFromSection(section)
+	if err != nil {
+		logrus.Warn(err)
+		return
+	}
+
+	for i := range list {
+		err = sc.cache.AddProduct(list[i])
+		if err != nil {
+			logrus.Warn(err)
+			continue
+		}
+	}
 }
 
 type Pool struct {
